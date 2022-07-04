@@ -1,0 +1,2 @@
+arm-angstrom-linux-gnueabi-gcc -mfloat-abi=hard -mcpu=cortex-a9 --sysroot=/usr/local/oecore-x86_64/sysroots/armv7at2hf-neon-angstrom-linux-gnueabi add_scalar.c test.c key_exchange.c seed.c sign.c verify.c fe.c ge.c keypair.c sc.c sha512.c -o test
+
