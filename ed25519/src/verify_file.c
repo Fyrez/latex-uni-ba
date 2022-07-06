@@ -2,128 +2,92 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 int main(int argc, char** argv) {
 
-	long lSize;
-	char *buffer;
-	int i;
-	FILE *key_file = fopen ( argv[2] , "rb" );
-	if ( !key_file ) perror(argv[2]), exit(1);
+	// declare variables for later use
+	// public key has to be 32-Byte writable char array
+	// signature has to be 64-Byte writable char array
+	long FILE_SIZE;
+	char *BUFFER;
+	unsigned char PUBLIC_KEY[32], SIGNATURE[64];
 
-	fseek( key_file , 0L , SEEK_END);
-	lSize = ftell( key_file );
-	rewind( key_file );
-
-	/* allocate memory for entire content */
-	buffer = calloc( 1, lSize + 1 );
-	if ( !buffer ) fclose(key_file), fputs("memory alloc fails", stderr), exit(1);
-
-	/* copy the file into the buffer */
-	if ( 1 != fread( buffer , lSize, 1 , key_file) )
-		fclose(key_file), free(buffer), fputs("entire read fails", stderr), exit(1);
-	fclose(key_file);
-
-	unsigned char public_key[32];
-	//strcpy (public_key, buffer);
-	for (i = 0; i < lSize + 1; ++i) {
-		public_key[i] = ((char *)buffer)[i];
-	}
-	/* do your work here, buffer is a string contains the whole text */
-	free(buffer);
-	FILE *key_test_file = fopen("/home/mulbric9/BA/ed25519/src/key_test.txt", "w+");
-	if (key_test_file == NULL)
-	{
-		printf("error opening file\n");
-		exit(1);
-	}
-	for (i = 0; i < sizeof(public_key); i++) {
-		fputc(public_key[i], key_test_file);
-		// Failed to write do error code here.
-	}
-	fclose(key_test_file);
-
-
-	FILE *sig_file = fopen ( argv[3] , "rb" );
-	if ( !sig_file ) perror(argv[3]), exit(1);
-
-	fseek( sig_file , 0L , SEEK_END);
-	lSize = ftell( sig_file );
-	rewind( sig_file );
-
-	/* allocate memory for entire content */
-	buffer = calloc( 1, lSize + 1 );
-	if ( !buffer ) fclose(sig_file), fputs("memory alloc fails", stderr), exit(1);
-
-	/* copy the file into the buffer */
-	if ( 1 != fread( buffer , lSize, 1 , sig_file) )
-		fclose(sig_file), free(buffer), fputs("entire read fails", stderr), exit(1);
-	fclose(sig_file);
-
-	unsigned char signature[64];
-	//strcpy (signature, buffer);
-	for (i = 0; i < lSize + 1; ++i) {
-		signature[i] = ((char *)buffer)[i];
-	}
-	/* do your work here, buffer is a string contains the whole text */
-	free(buffer);
-	FILE *sig_test_file = fopen("/home/mulbric9/BA/ed25519/src/sig_test.txt", "w+");
-	if (sig_test_file == NULL)
-	{
-		printf("error opening file\n");
-		exit(1);
-	}
-	for (i = 0; i < sizeof(signature); i++) {
-		fputc(signature[i], sig_test_file);
-		// Failed to write do error code here.
-	}
-	fclose(sig_test_file);
-
-	FILE *msg_file = fopen ( argv[1], "rb" );
-	if ( !msg_file ) perror(argv[1]), exit(1);
-
-	fseek( msg_file , 0L , SEEK_END);
-	lSize = ftell( msg_file );
-	rewind( msg_file );
-
-	/* allocate memory for entire content */
-	buffer = calloc( 1, lSize + 1 );
-	if ( !buffer ) fclose(msg_file), fputs("memory alloc fails", stderr), exit(1);
-
-	/* copy the file into the buffer */
-	if ( 1 != fread( buffer , lSize, 1 , msg_file) )
-		fclose(msg_file), free(buffer), fputs("entire read fails", stderr), exit(1);
-	fclose(msg_file);
-
-	unsigned char *message = malloc(lSize + 1 );
-	for (i = 0; i < lSize; ++i) {
-		message[i] = ((char *)buffer)[i];
+	// open public key, prepare and load it into a buffer
+	FILE *PUBLIC_KEY_FILE = fopen ( argv[2] , "rb" );
+	if ( !PUBLIC_KEY_FILE ) {
+		perror(argv[2]), exit(1);
 	}
 
-	//printf("%.*s\n", 32, public_key);
-	//printf("%.*s", 64, signature);
-	if (ed25519_verify(signature, message, lSize, public_key)) {
-		printf("valid signature\n");
+	fseek( PUBLIC_KEY_FILE , 0L , SEEK_END);
+	FILE_SIZE = ftell( PUBLIC_KEY_FILE );
+	rewind( PUBLIC_KEY_FILE );
+
+	BUFFER = calloc( 1, FILE_SIZE + 1 );
+	if ( !BUFFER ) fclose(PUBLIC_KEY_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+	if ( 1 != fread( BUFFER , FILE_SIZE, 1 , PUBLIC_KEY_FILE) )
+		fclose(PUBLIC_KEY_FILE), free(BUFFER), fputs("entire read fails", stderr), exit(1);
+	fclose(PUBLIC_KEY_FILE);
+
+	//write public key from buffer to char array
+	for (int i = 0; i < sizeof(PUBLIC_KEY); ++i) {
+		PUBLIC_KEY[i] = ((char *)BUFFER)[i];
+	}
+	free(BUFFER);
+
+	// open signature, prepare and load it into a buffer
+	FILE *SIGNATURE_FILE = fopen ( argv[3] , "rb" );
+	if ( !SIGNATURE_FILE ) perror(argv[3]), exit(1);
+
+	fseek( SIGNATURE_FILE , 0L , SEEK_END);
+	FILE_SIZE = ftell( SIGNATURE_FILE );
+	rewind( SIGNATURE_FILE );
+
+	BUFFER = calloc( 1, FILE_SIZE + 1 );
+	if ( !BUFFER ) fclose(SIGNATURE_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+	if ( 1 != fread( BUFFER , FILE_SIZE, 1 , SIGNATURE_FILE) )
+		fclose(SIGNATURE_FILE), free(BUFFER), fputs("entire read fails", stderr), exit(1);
+	fclose(SIGNATURE_FILE);
+
+	// write signature from buffer to char array
+	for (int i = 0; i < sizeof(SIGNATURE); ++i) {
+		SIGNATURE[i] = ((char *)BUFFER)[i];
+	}
+	free(BUFFER);
+
+	// open update file
+	FILE *UPDATE_FILE = fopen ( argv[1], "rb" );
+	if ( !UPDATE_FILE ) perror(argv[1]), exit(1);
+
+	// check update file size for memory allocation
+	fseek( UPDATE_FILE , 0L , SEEK_END);
+	FILE_SIZE = ftell( UPDATE_FILE );
+	rewind( UPDATE_FILE );
+
+	// allocate memory
+	BUFFER = calloc( 1, FILE_SIZE + 1 );
+	if ( !BUFFER ) fclose(UPDATE_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+	// read file into buffer
+	if ( 1 != fread( BUFFER , FILE_SIZE, 1 , UPDATE_FILE) )
+		fclose(UPDATE_FILE), free(BUFFER), fputs("entire read fails", stderr), exit(1);
+	fclose(UPDATE_FILE);
+
+	// read update file (buffer) into char array for use in verification process
+	unsigned char *message = malloc(FILE_SIZE + 1 );
+	for (int i = 0; i < FILE_SIZE; ++i) {
+		message[i] = ((char *)BUFFER)[i];
+	}
+	free(BUFFER);
+
+	// verify integrity of update file
+	if (ed25519_verify(SIGNATURE, message, FILE_SIZE, PUBLIC_KEY)) {
+		printf("valid SIGNATURE\n");
 	} else {
-		printf("invalid signature\n");
+		printf("invalid SIGNATURE\n");
 	}
-
-	/*FILE *test_file = fopen("/home/mulbric9/BA/ed25519/src/message.txt", "w+");
-	if (test_file == NULL)
-	{
-	    printf("error opening file\n");
-	    exit(1);
-	}
-	for (i = 0; i < lSize; ++i){
-	fprintf(test_file, "%c", ((char *)message)[i]);
-	}
-	fclose(test_file);
-	*/
-	//printf("public_key: %s\n", public_key);
-	//printf("signature: %s\n", signature);
-
-	/* do your work here, buffer is a string contains the whole text */
 	free(message);
-
 
 	return 0;
 }
