@@ -37,22 +37,23 @@ int main(int argc, char *argv[]) {
     ed25519_sign(signature, message, FILE_SIZE, public_key, private_key);
     free(message);
     
-    
-    FILE *key_file = fopen(argv[2], "w+");
-    if (key_file == NULL)
+    // write signature and public to given file
+
+    FILE *KEY_SIG_FILE = fopen(argv[2], "w+");
+    if (KEY_SIG_FILE == NULL)
     {
         printf("error opening file\n");
         exit(1);
     }
     for (int i= 0; i < sizeof(public_key); i++) {
-        fputc(public_key[i], key_file);
+        fputc(public_key[i], KEY_SIG_FILE);
         // Failed to write do error code here.
     }
     for (int i= 0; i < sizeof(signature); i++){
-        fputc(signature[i], key_file);
+        fputc(signature[i], KEY_SIG_FILE);
     }
 
-    fclose(key_file);
+    fclose(KEY_SIG_FILE);
     /*
     FILE *sig_file = fopen("/home/mulbric9/BA/ed25519/src/signature.txt", "w+");
     if (sig_file == NULL)
