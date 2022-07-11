@@ -1,0 +1,28 @@
+HOW TO:
+
+GPG --full-generate-key --expert 
+use ECC -> ed25519
+GPG --detach-sign *ISEG_UPDATE_ZIP*
+Export Public Key
+Import Public on iseg device
+GPG --verify *DETACHED_SIGNATURE* *ISEG_UPDATE_ZIP*
+
+
+Ausblick:
+
+Das Verifizieren mit GPG schließt mit 7 Sekunden in einem passablen Zeitumfang ab. Dennoch würden 7 Sekunden eine merkbare Wartezeit im Aktualisizerungsprozess darstellen. Eine Mögliche Optimierung findet sich in der C-basierten Implementierung. Diese nimmt zwar im Durchschnitt 14-15 Sekunden in Anpspruch, könnte aber wahrscheinlich verbessert werden. 13 Sekunden werden allein für das Hashen der Aktualisierungsdatei verwendet. Ein Austauschen des Hashinalgorithmus SHA-512 druch eine Implementierung von SHA-512 in ARMv7 Assembler könnte hier Abhilfe schaffen. Es ist unklar, ob damit der Verifiziervorgang auf unter 7 Sekunden gedrückt werden könnte, aber es ist die beste Chance dafür.
+
+Außerdem sollte diskutiert werden, wie Aktualisierung, Signatur und Public Key beim Endkunden ankommen. Die Aktualisierung wurde bisher standardmäßig online(ISEG-LINK) zum Download angeboten. Mehrere Ideen stehen hierfür im Raum. 
+
+Zunächst könnten Signatur und Public Key im selben Downloadverzeichnis, wie bisher die Aktualisierung, angeboten werden. So würde es auf den Kunden zurückfallen, sich bewusst die Signatur zu beschaffen. Würde er dies nicht, so würde die Aktualisierung auch ohne Signatur funktionieren, jedoch dann auf Risiko des Kunden. Für ein Verfahren mit Verifizierung müsste der Kunde die Signatur und den Public Key im Update-Verzeichnis (/mnt/user/data/updates) hinterlegen und das Update-Skript mit entsprechenden Parametern aufgerufen werden.
+
+Des Weiteren besteht die Möglichkeit sämtliche benötigten Dateien in einem Tarball anzubieten. Dieser könnte runtergeladen werden und vom Update-Skript vor der Installation entpackt werden. Somit müsste sich der Kunde nur um eine Datei aktiv kümmern, der Rest geschieht automatisch. Diese Möglichkeit würde allerdings die verifizierte Aktualisierung auf den Kunden forcieren, da die Signatur automatisch verarbeitet wird. Hier müsste gegebenenfalls ein Input des Kunden angefordert werden, ob er die Aktualisierung gegen die Signatur prüfen will.
+
+Es besteht auch die Möglichkeit (im GPG-Verfahren) 
+
+
+// Was ist bei Software Downgrade -- Einsatz C-Implementierung ??
+
+
+Public Key -- in Update mit rein // auf Webseite
+Abfrage in icsupdate.sh // Gibt es einen Public Key im neuen Update? // Ist dieser neu?, wenn ja, dann gpg -- import PFAD_TO_KEY
