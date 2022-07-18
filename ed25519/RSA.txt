@@ -1,0 +1,4 @@
+Schlüsselstärken verlieren ab einer bestimmten Grenze an Wert. Wenn sie mit gegenwärtig existierenden sowie voraussichtlich zukünftig entwickelten Technologien nicht mehr gebrochen werden können, sind sie an dieser Grenze angelangt. Diese Aussage schließt dabei Quantencomputer aus, da diese durch ihre Effizienz im Lösen von bestimmten Rechenaufgaben viele Signierverfahren komplett obsolet machen.
+
+Grenze von Schlüsselsicherheit abgesichert durch abflauen von mooreschen Gesetz?
+
