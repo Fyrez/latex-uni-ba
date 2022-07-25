@@ -1,0 +1,247 @@
+\documentclass[thesis=bachelor,faculty=cb]{hsmw-thesis}
+\usepackage{listings}
+\usepackage{xcolor}
+\title[Research on the certificate-based updating of embedded control systems]{Untersuchungen zur zertifikatsbasierten Aktualisierung von verteilten Steuerungssystemen}
+\author{Marc}{Ulbricht} 
+%<signatur-schildbach.pdf>
+\submissiondate{2022}[8][4]
+\defensedate{2022}
+\courseofstudy[Applied Computer Science]{Angewandte Informatik}
+\seminargroup{IF17wI-B}
+\examiner[Prof. Dr.-Ing.]{Thomas Beierlein}
+\addexaminer{Andreas Weger}[M.Sc.]
+\abstract{Dieses Dokument soll als minimales Beispiel für eine Abschlussarbeit dienen und hat nur einen sehr begrenzten Nährwert.}
+\lstset{basicstyle=\ttfamily,
+	keywordstyle=\color{blue}\ttfamily,
+	showstringspaces=false,
+	stringstyle=\color{orange}\ttfamily,
+	commentstyle=\color{red}\ttfamily,
+	morecomment=[l][\color{magenta}]{\#},
+	breaklines=true
+}
+\begin{document}
+\chapter{GPG BASH}
+\begin{lstlisting}[language=bash]
+# if a GPG_SIG_FILE was provided, 
+# check if it is a valid GPG signature
+if [ -f "${ZIP_FILE_PATH}${GPG_SIG_FILE}" ] ; then
+	
+	if [ "${GPG_SIG_FILE: -4}" == ".gpg" ] ; then
+	    echo "pass .gpg files only as argument to the -f 
+	    parameter"
+	    exit 1
+	fi
+	
+	echo "checking signature..."
+	
+	${GPG} --verify "${ZIP_FILE_PATH}${GPG_SIG_FILE}"
+	"${ZIP_FILE_PATH}${ZIP_FILE}" 2>/dev/null
+	
+	IS_VALID_SIGNATURE=$?
+	
+	if [ $IS_VALID_SIGNATURE -eq 1 ] ; then
+	    echo "incorrect GPG signature, check the signature file 
+	    name for errors: ${ZIP_FILE_PATH}${GPG_SIG_FILE}"
+	    exit 1
+	
+	elif [ $IS_VALID_SIGNATURE -eq 2 ] ; then
+	    echo "invalid GPG signature, check the signature file 
+	    name for errors: ${ZIP_FILE_PATH}${GPG_SIG_FILE}"
+	    exit 1
+	
+	else
+	    echo "correct signature, resuming update..."
+	fi
+fi
+	
+\end{lstlisting}
+\chapter{C}
+\begin{lstlisting}[language=C]
+#include "ed25519.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+int main(int argc, char** argv) {
+
+// public key has to be 32-Byte writable char array
+// signature has to be 64-Byte writable char array
+
+long FILE_SIZE;
+char *BUFFER;
+unsigned char PUBLIC_KEY[32], SIGNATURE[64];
+
+
+// load public key and signature
+
+FILE *SIGNATURE_FILE = fopen ( argv[2] , "rb" );
+if ( !SIGNATURE_FILE ) {
+perror(argv[2]), exit(1);
+}
+
+fseek( SIGNATURE_FILE , 0L , SEEK_END);
+FILE_SIZE = ftell( SIGNATURE_FILE );
+if (FILE_SIZE != sizeof(PUBLIC_KEY)+sizeof(SIGNATURE)) fclose(SIGNATURE_FILE), fputs("incompatible signature type\n", stderr), exit(1); 
+
+rewind( SIGNATURE_FILE );
+
+BUFFER = calloc( 1, FILE_SIZE + 1 );
+if ( !BUFFER ) fclose(SIGNATURE_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+if ( 1 != fread( BUFFER , FILE_SIZE, 1 , SIGNATURE_FILE) )
+fclose(SIGNATURE_FILE), free(BUFFER), fputs("entire read fails", stderr), exit(1);
+fclose(SIGNATURE_FILE);
+
+for (int i = 0; i < FILE_SIZE; ++i) {
+if ( i < sizeof(PUBLIC_KEY)) {
+PUBLIC_KEY[i] = ((char *)BUFFER)[i];
+}
+else 
+SIGNATURE[i-sizeof(PUBLIC_KEY)] = ((char *)BUFFER)[i];
+}
+
+free(BUFFER);
+/*
+// open signature, prepare and load it into a buffer
+FILE *SIGNATURE_FILE = fopen ( argv[3] , "rb" );
+if ( !SIGNATURE_FILE ) perror(argv[3]), exit(1);
+
+fseek( SIGNATURE_FILE , 0L , SEEK_END);
+FILE_SIZE = ftell( SIGNATURE_FILE );
+rewind( SIGNATURE_FILE );
+
+BUFFER = calloc( 1, FILE_SIZE + 1 );
+if ( !BUFFER ) fclose(SIGNATURE_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+if ( 1 != fread( BUFFER , FILE_SIZE, 1 , SIGNATURE_FILE) )
+fclose(SIGNATURE_FILE), free(BUFFER), fputs("entire read fails", stderr), exit(1);
+fclose(SIGNATURE_FILE);
+
+// write signature from buffer to char array
+for (int i = 0; i < sizeof(SIGNATURE); ++i) {
+SIGNATURE[i] = ((char *)BUFFER)[i];
+}
+free(BUFFER);
+*/
+
+// load update file
+
+FILE *UPDATE_FILE = fopen ( argv[1], "rb" );
+if ( !UPDATE_FILE ) perror(argv[1]), exit(1);
+
+fseek( UPDATE_FILE , 0L , SEEK_END);
+FILE_SIZE = ftell( UPDATE_FILE );
+rewind( UPDATE_FILE );
+
+BUFFER = calloc( 1, FILE_SIZE + 1 );
+if ( !BUFFER ) fclose(UPDATE_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+if ( 1 != fread( BUFFER , FILE_SIZE, 1 , UPDATE_FILE) )
+fclose(UPDATE_FILE), free(BUFFER), fputs("entire read fails", stderr), exit(1);
+fclose(UPDATE_FILE);
+
+unsigned char *message = malloc(FILE_SIZE + 1 );
+for (int i = 0; i < FILE_SIZE; ++i) {
+message[i] = ((char *)BUFFER)[i];
+}
+free(BUFFER);
+
+// verify integrity of update file
+
+if (ed25519_verify(SIGNATURE, message, FILE_SIZE, PUBLIC_KEY)) {
+printf("\nvalid signature\n");
+return 0;
+} else {
+printf("\ninvalid signature\n");
+return 1;
+}
+free(message);
+
+#include "ed25519.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main(int argc, char *argv[]) {
+
+unsigned char seed[32], public_key[32], private_key[64], signature[64];
+long FILE_SIZE;
+char *buffer;
+
+
+// open update file and read it into a buffer
+FILE *UPDATE_FILE = fopen ( argv[1], "rb" );
+if ( !UPDATE_FILE ) perror(argv[1]), exit(1);
+
+fseek( UPDATE_FILE , 0L , SEEK_END);
+FILE_SIZE = ftell( UPDATE_FILE );
+rewind( UPDATE_FILE );
+buffer = calloc( 1, FILE_SIZE + 1 );
+if ( !buffer ) fclose(UPDATE_FILE), fputs("memory alloc fails", stderr), exit(1);
+
+if ( 1 != fread( buffer , FILE_SIZE, 1 , UPDATE_FILE) )
+fclose(UPDATE_FILE), free(buffer), fputs("entire read fails", stderr), exit(1);
+fclose(UPDATE_FILE);
+// write update file from buffer to char array
+unsigned char *message = malloc(FILE_SIZE + 1 );
+for (int i = 0; i < FILE_SIZE; ++i) {
+message[i] = ((char *)buffer)[i];
+}
+
+free(buffer);
+if (ed25519_create_seed(seed)) {
+printf("error while generating seed\n");
+exit(1);
+}
+ed25519_create_keypair(public_key, private_key, seed);
+ed25519_sign(signature, message, FILE_SIZE, public_key, private_key);
+free(message);
+
+// write signature and public to given file
+
+FILE *KEY_SIG_FILE = fopen(argv[2], "w+");
+if (KEY_SIG_FILE == NULL)
+{
+printf("error opening file\n");
+exit(1);
+}
+for (int i= 0; i < sizeof(public_key); i++) {
+fputc(public_key[i], KEY_SIG_FILE);
+// Failed to write do error code here.
+}
+for (int i= 0; i < sizeof(signature); i++){
+fputc(signature[i], KEY_SIG_FILE);
+}
+
+fclose(KEY_SIG_FILE);
+/*
+FILE *sig_file = fopen("/home/mulbric9/BA/ed25519/src/signature.txt", "w+");
+if (sig_file == NULL)
+{
+printf("error opening file\n");
+exit(1);
+}
+for (int i = 0; i < sizeof(signature); i++) {
+fputc(signature[i], sig_file);
+// Failed to write do error code here.
+}
+// Failed to write do error code here.
+
+fclose(sig_file);
+
+
+if (ed25519_verify(signature, message, FILE_SIZE, public_key)) {
+printf("valid signature\n");
+} else {
+printf("invalid signature\n");
+}*/
+
+return 0;
+}
+
+
+}
+\end{lstlisting}
+	\appendix % Anhang
+	\chapter{UML-Diagramme}
+	...
+\end{document}

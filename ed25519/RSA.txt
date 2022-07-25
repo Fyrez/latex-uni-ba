@@ -2,3 +2,31 @@ Schlüsselstärken verlieren ab einer bestimmten Grenze an Wert. Wenn sie mit ge
 
 Grenze von Schlüsselsicherheit abgesichert durch abflauen von mooreschen Gesetz?
 
+
+
+RSA mathematisch
+
+Ed mathem
+
+RSA vs Ed25519 Theorie
+Sicherheit ab einem gewissen Level Gleich
+RSA 3072 Bit Key vs Ed25519 Key - in Ed25519 Paper als gleichwertig betitelt 
+Ed25519 schneller
+
+Screenshot Nachweis RSA Zeit vs Ed25519 Zeit auf ICS Mini 2
+
+.GPG Datei könnte jemand MITM mit selbem Namen mitgeben -> würde trotzdem als richtig erkann werden
+Lösungsvorschlag: Key mit Iseg Kennung / spezielle Mail erstellen
+GPG --verify Output mit grep nach spezieller Iseg Mail durchsuchen -- dementsprechend handeln
+
+icsupdate.sh vorstellen
+-Screenshot von getoptarg bis verifizieren
+
+-Updateprozess vorstellen -> 
+
+weiße Seiten in Latex:
+1. zu Beginn alles auf neuer Buchseite
+2. Chapter können nur auf ungerade Seite anfangen
+
+neues image wird geöffnet und neue icsupdate.sh gelesen
+Da ein aktuelles icsupdate.sh gestartet wird, kann das nächste Update noch nicht mit Verifizierprozess stattfinden, da dem neuen icsupdate.sh diesselben parameter mitgegeben werden, wie dem aktuellen. Jedoch würde nur die neue icsupdate.sh die Parameter zum verifizieren verstehen, da sie nur da definiert sind. Die aktuelle icsupdate.sh würde sofort mit error returnen.

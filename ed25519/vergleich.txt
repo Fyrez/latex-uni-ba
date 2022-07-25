@@ -1,0 +1,45 @@
+HOW TO:
+
+GPG --full-generate-key --expert 
+use ECC -> ed25519
+GPG --detach-sign *ISEG_UPDATE_ZIP*
+Export Public Key
+Import Public on iseg device
+GPG --verify *DETACHED_SIGNATURE* *ISEG_UPDATE_ZIP*
+
+HOW TO C:
+
+./create_key {ZU_SIGNIERENDE_DATEI} {PFAD_ZU_SIGNATUR.SIG(OUT)}
+
+./verify_file_arm {ZU_VERIFIZIERENDE_DATEI} {SIGNATUR.SIG}
+
+GPG:
+Es muss ein Public Key vorher generiert werden, wie oben beschrieben, welcher im Iseg-Gerät als vertrauenswürdiger Schlüssel eingerichtet werden muss.
+
+Python:
+Eine mögliche Umsetzung des Verifizierungsverfahrens mittels PyNaCl wurde theorisiert. PyNaCl bietet eine Python Anbindung zur Networking and Cryptography(NaCl) Bibibliothek. Darin findet sich auch eine Version des ed25519 Signaturalgorithmus. Die Umsetzung wurde recht schnell eingestellt, da PyNaCl eine Python Version von mindestens 3.6 vorraussetzt und auf den Iseg-Geräten derzeit maximal Python 3.5 zur Verfügung steht.
+
+
+Ausblick:
+
+Das Verifizieren mit GPG schließt mit 7 Sekunden in einem passablen Zeitumfang ab. Dennoch würden 7 Sekunden eine merkbare Wartezeit im Aktualisizerungsprozess darstellen. Eine Mögliche Optimierung findet sich in der C-basierten Implementierung. Diese nimmt zwar im Durchschnitt 14-15 Sekunden in Anpspruch, könnte aber wahrscheinlich verbessert werden. 13 Sekunden werden allein für das Hashen der Aktualisierungsdatei verwendet. Ein Austauschen des Hashinalgorithmus SHA-512 druch eine Implementierung von SHA-512 in ARMv7 Assembler könnte hier Abhilfe schaffen. Es ist unklar, ob damit der Verifiziervorgang auf unter 7 Sekunden gedrückt werden könnte, aber es ist die beste Chance dafür.
+
+Außerdem sollte diskutiert werden, wie Aktualisierung, Signatur und Public Key beim Endkunden ankommen. Die Aktualisierung wurde bisher standardmäßig online(ISEG-LINK) zum Download angeboten. Mehrere Ideen stehen hierfür im Raum. 
+
+Zunächst könnten Signatur und Public Key im selben Downloadverzeichnis, wie bisher die Aktualisierung, angeboten werden. So würde es auf den Kunden zurückfallen, sich bewusst die Signatur zu beschaffen. Würde er dies nicht, so würde die Aktualisierung auch ohne Signatur funktionieren, jedoch dann auf Risiko des Kunden. Für ein Verfahren mit Verifizierung müsste der Kunde die Signatur und den Public Key im Update-Verzeichnis (/mnt/user/data/updates) hinterlegen und das Update-Skript mit entsprechenden Parametern aufgerufen werden.
+
+Des Weiteren besteht die Möglichkeit sämtliche benötigten Dateien in einem Tarball anzubieten. Dieser könnte runtergeladen werden und vom Update-Skript vor der Installation entpackt werden. Somit müsste sich der Kunde nur um eine Datei aktiv kümmern, der Rest geschieht automatisch. Diese Möglichkeit würde allerdings die verifizierte Aktualisierung auf den Kunden forcieren, da die Signatur automatisch verarbeitet wird. Hier müsste gegebenenfalls ein Input des Kunden angefordert werden, ob er die Aktualisierung gegen die Signatur prüfen will.
+
+Durchaus vorstellbar wäre auch die Signatur und Aktualisierung im GPG Signaturverfahren zu einer ".pem" Datei zu kombinieren. Vorteil dieser Methode ist, dass der Kunde nur, wie gewohnt, eine Datei herunterladen muss. Allerdings wird so ein Verifizieren erzwungen, da die ".pem" Datei vorher nicht als Aktualisierung genutzt werden kann. Dies könnte zu Problemen führen, falls ein Kunde keine Verifizierung möchte. Außerdem besteht die Möglichkeit, dass ein Kunde seine ICS Version so weit downgraded, dass er kein GPG mehr auf dem Gerät zur Verfügung hat. In solch einem Fall muss ein Update auch in ursprünglicher Form zum Download bereit stehen und nicht nur als ".pem" Datei.
+
+Es könnte sich anbieten bei Erfolgreicher Verifizierung eine Art Flag in einer Log-Datei zu hinterlassen. Somit könnte gegen Nutzer vorgegangen werden, welche die Schuld für ihr nicht funktionierendes System in einer fehlerhaften Aktualisierung suchen. Wäre dieses Flag gesetzt, müsste die Installation mit einer unversehrten Datei abgelaufen sein und das System einwandfrei laufen (vorrausgesetzt die Aktualisierung war nicht von vorneherein fehlerhaft).
+So kann nur der Nutzer Schuld sein.
+
+ed25519 sollte auf lange Zeit sicher bleiben, sofern keine Quantencomputer vorzeitig entwickelt werden - 2
+
+
+// Was ist bei Software Downgrade -- Einsatz C-Implementierung ??
+
+
+Public Key -- in Update mit rein // auf Webseite
+Abfrage in icsupdate.sh // Gibt es einen Public Key im neuen Update? // Ist dieser neu?, wenn ja, dann gpg -- import PFAD_TO_KEY
