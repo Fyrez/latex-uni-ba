@@ -6,7 +6,19 @@ Grenze von Schlüsselsicherheit abgesichert durch abflauen von mooreschen Gesetz
 
 RSA mathematisch
 
-RSA ist ein public-key Kryptografieverfahren, entwickelt in 1977 am MIT von Ronald Rivest, Adi Shamir und Leonard Adleman. Aus ihren Nachnamen erschließt sich der Name des Verfahrens "RSA". 
+RSA ist ein asymmetrisches Kryptographieverfahren, welches 1978 von Ronald Rivest, Adi Shamir und Leonard Adleman veröffentlicht wurde. Aus ihren Nachnamen erschließt sich hierbei auch der Name des Verfahrens "RSA".
+Für dieses Verfahren werden ein public-key und ein private-key generiert. Der public-key besteht dabei aus dem RSA-Modul n sowie dem Verschlüsselungsexponenten e. Der private-key enthält ebenfalls n und den Entschlüsselungsexponenten d.
+Die Namen der Exponenten scheinen unsinnig, da beim Signieren der private-key verwendet wird. Dies hat den Grund, dass das Signieren die Operationen des Verschlüsselns einer Nachricht in umgekehrter Reihenfolge durchführt. So wird 
+beim Verschlüsseln mit dem public-key agiert. Für das Erstellen der Schlüssel werden zunächst zwei große zufällige Primzahlen p und q generiert, für welche p ungleich q gilt. Der RSA-Modul n lässt sich nun als n = p * q berechnen. Außerdem wird phi von n = (p-1)*(q-1) berechnet.
+Phi meint die Eulersche Phi-Funktion, welche einer natürlichen Zahl n die Anzahl natürlicher Zahlen von 1 bis n, welche zu n teilerfremd sind zuordnet. Hierbei handelt es sich um einen Spezialfall, da p und q Primzahlen sind. Somit wäre q zu den Zahlen von 1 bis q-1 teilerfremd und phi von q
+lässt sich als q-1 darstellen. Wird dies auch bei p angewandt ergibt sich für phi von n die oben genannte Definition phi von n = (p-1) * (q-1). Danach wird der Verschlüsselungsexponent e so gewählt, dass e Teil der natürlichen Zahlen ist, 1 < e < phi von n gilt und dass e und phi von n teilerfremd
+sind. Der public-key ist somit berechnet und lässt sich als Tupel (n, e) darstellen. Für den private-key fehlt nun noch der Entschlüsselungsexponent d, welcher sich aus e*d = 1 (mod phi von n) berechnen lässt, vorausgesetzt d ist Teil der natürlichen Zahlen und es erfüllt die Vorgabe 1 < d < phi von n.
+Der private-key (n, d) ist einsatzbereit, nun sollten sicherheitshalber p, q und phi von n gelöscht werden um mögliche Spuren von public und private-key zu verwischen. Eine Nachricht m soll nun signiert werden. Zunächst wird ein Hash der Nachricht erstellt, da so die Größe der Nachricht keinen
+Einfluss auf die Dauer des Signierens hat. Die Signatur s berechnet sich nun als s = Hash(m) hoch d mod n und kann zusammen mit dem public-key und der eigentlichen Nachricht dem Empfänger übermittelt werden. Der Empfänger berechnet nun v = s hoch e mod n und ermittelt selbst Hash(m) der
+originalen Nachricht. Stimmen v und Hash(m) überein besteht eine sehr hohe Chance, dass die Nachricht echt ist. Ihre Integrität und Authentizität sind sichergestellt. Die Sicherheit des RSA Verfahrens ist durch die Unkenntnis von phi von n gegeben, so kann der Angreifer nicht einfach
+den private-key reproduzieren. Phi von n lässt sich mit dem Wissen um  p und q über den vorher gezeigten Speziallfall einfach berechnen, ist jedoch ohne diese extrem Zeitaufwendig und unsinnig für einen Angreifer. Seine größte Chance liegt im Faktorisieren von n in p und q, hierfür sind jedoch auch
+noch keine effizienten Algorithmen bekannt. Dies nennt man auch eine Einwegfunktion, da die Berechnungen nur in eine Richtung einfach durchzuführen sind. 
+
 
 The public key in this cryptosystem consists of the value n, which is called the modulus,
 and the value e, which is called the public exponent. The private key consists of the
