@@ -1,0 +1,51 @@
+Zu Beginn wird ein Punkt G, genannt „Generator“, welcher auf der elliptischen Kurve curve25519
+liegt, definiert. Dazu kommt die Ordnung q (Anzahl der Elemente) einer Untergruppe, welche die
+Punkte auf der elliptischen Kurve enthält, die durch G generiert werden.
+
+## kurve eher
+## hash immer Sha-512
+
+Der private-key wird aus einem seed generiert. Dieser seed ist ein zufällig gewählter Integer, welcher ungefähr eine Bitlänge von q haben sollte.
+Der seed wird zunächst mit SHA-512 gehashed und anschließend werden seine letzten 8 Bits auf 0 gesetzt. Zuletzt wird das höchste Bit auf 0 und das zweithöchste
+Bit auf 1 gesetzt. Dieser Prozess sorgt dafür, dass der private-key immer derselben Untergruppe von Punkten auf der hier gewählten elliptischen Kurve angehört.
+Außerdem wird so Schutz gegen zeitbasierte Abhörangriffe geboten, da die Bitlänge des private-keys sich immer im selben Größenbereich bewegt und
+so die Berechnungszeiten ungefähr gleich bleiben.
+
+Beim public-key handelt es sich um einen Punkt auf der gewählten elliptischen Kurve, welcher aus dem private-key und dem Generator G mit 
+public-key = private-key * G berechnet wird. Die Darstellung des public-keys ergibt sich aus der Y-Koordinate und dem niedrigsten Bit der X-Koordinate 
+des eben berechneten Punktes.
+
+Die Signatur einer Nachricht m kann nun aus private-key und public-key ermittelt werden. Dabei besteht die Signatur aus zwei Integern R und s.
+R stellt, ähnlich wie der public-key, einen Punkt auf der elliptischen Kurve dar und ist definiert als R = r * G. Die Variable r ist ein Integer, welcher sich aus
+r = hash(hash(private-key) + m) mod q berechnet. Dafür ist zu beachten, dass die Nachricht m ebenfalls vorher gehashed wird, um ein Rechnen mit m möglich zu machen.
+Der Integer s ist definiert als s = (r + h * private-key) mod q, wobei sich h aus h = hash(R + public-key + m) mod q berechnen lässt. Wurden diese Operationen erfolgreich
+vollzogen, so stellt die Kombination von R und s nun die 64-Byte Signatur von m dar.
+
+Für das Verifizieren der Signatur werden nun zwei Punkte P1 und P2 gebildet. Für das Berechnen von P1 wird die Variable s der Signatur verwendet und für das Berechnen von P2
+werden der public-key und die Variable R der Signatur genutzt. P1 ist als P1 = s * G definiert und kann ohne weiteren Aufwand berechnet werden. 
+Als Nächstes wird P2 aus P2 = R + h * public-key ermittelt. Die Varialbe h berechnet sich vorher aus h = hash(R + public-key + m) mod q. 
+Erneut muss die Nachricht m für das Berechnen vorher selbst gehashed werden. Sollten die Punkte P1 und P2 gleich sein, ist die Signatur gültig, da ein korrektes s beim Signieren nur durch Kenntnis des 
+private-keys berechnet werden konnte.
+
+Durch Umstellen der Gleichungen lässt sich nachweisen, dass bei P1 und P2 bei korrektem public-key und private-key gleich sein müssen. Dafür wird die, beim Signieren verwendete,
+Definition von s in die Berechnung von P1 = s * G eingesetzt. So ergibt sich folgende Gleichung P1 = (r + h * private-key) mod q * G. Nun wird mit G ausmultipliziert, woraus sich
+P1 = r * G + h * private-key * G ergibt. Beim Signieren wurde R als r * G definiert und lässt sich hier nun ersetzen. Des Weiteren wurde der public-key aus private-key * G errechnet, somit
+lässt sich dieser Term ebenfalls austauschen. Es ergibt sich P1 = R + h * public-key, was wiederum der Definition von P2 entspricht. Daraus folgt, dass P1 und P2 bei gleicher Nachricht m
+und korrektem public-key und private-key zwingend gleich sein müssen.
+
+Die Sicherheit des Verfahrens ist durch die Einwegfunktion public-key = private-key * G gegeben. Der private-key bestimmt die Anzahl an Punktaddtionen mit G, welche sich einfach berechnen lassen.
+Ist jedoch durch den public-key nur ein Punkt auf der elliptischen Kurve gegeben, so lässt sich fast unmöglich die Anzahl der Punktaddtionen mit G bestimmen, also der private-key, aus welchen sich 
+der public-key ergeben hat. Die beste Chance eines Angreifers besteht darin den private-key über diskrete Logarithmus Algorithmen zu berechnen. Die besten bekannten Algorithmen haben dabei aber
+nur eine geringe Chance den private-key in einem Sinnvollen Zeitraum zu ermitteln, was bereits durch den Mindestaufwand von O(2128) beschrieben wurde.
+
+Vergleich Ed25519 Ed448
+Ed448 basiert wie Ed25519 auf EDdsa, verwendet dabei allerdings die Curve448 und die dazugehörigen Parameter für Berechnungen. 
+Ed448 https://datatracker.ietf.org/doc/html/rfc8032#section-5.2 page 15-19  bietet höhere Sicherheit im Vergleich zu Ed25519 mit einem 224-bit Sicherheitslevel https://datatracker.ietf.org/doc/html/rfc8032#section-5.2 p.3
+Im Austausch für die Höhere Sicherheit kostet das Berechnen einer Sigantur mit Ed448 auch mehr Resourcen https://crypto.stackexchange.com/questions/67457/elliptic-curve-ed25519-vs-ed448-differences.
+Da die Sicherheit mit Ed25519 bereits mehr als ausreichend ist und Resourcen auf den Iseg Geräten knapp sind, wird Ed448 wohl keine Verwendung finden. Außerdem müsste für das Verwenden von Ed448 mit GPG eine neuere GPG Version
+verwendet werden, welche auf den Iseg Geräten noch nachgerüstet werden müsste.
+
+Entscheid
+
+Wie in 3.1 beschrieben sind RSA und Ed25519 in ihrer Sicherheit gleich. Jedoch stellte sich durch Tests heraus, dass eine Signatur mit Ed25519 schneller verifiziert werden kann als mit RSA.
+Dieser Unterschied von ~0,05 Sekunden ist zwar nur marginal, spricht aber dennoch für Ed25519. Daher soll eine Implementierung von Ed25519 angestrebt werden.  
